@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import OtpModal from "@/components/OtpModal";
+import { supabase } from "@/lib/supabase";
 
 const FEATURES = [
   {
@@ -46,24 +47,91 @@ export default function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
 
-    if (password !== confirmPassword) {
-      setPasswordError("Password dan konfirmasi password tidak cocok.");
-      return;
-    }
-    setPasswordError("");
+  if (submitting) return;
 
-    // TODO: kirim data pendaftaran ke API kamu di sini, lalu trigger
-    // pengiriman OTP dari sisi server sebelum membuka modal ini.
-    setShowOtpModal(true);
+  setError("");
+  setPasswordError("");
+
+  if (password !== confirmPassword) {
+    setPasswordError("Password dan konfirmasi password tidak cocok.");
+    return;
   }
 
+  if (password.length < 8) {
+    setPasswordError("Password minimal 8 karakter.");
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim();
+    const cleanPhone = phone.trim();
+
+    console.log("REGISTER:");
+    console.log("Nama:", cleanName);
+    console.log("Email:", cleanEmail);
+    console.log("Phone:", cleanPhone);
+
+    const { data, error: authError } =
+      await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+
+        options: {
+          data: {
+            nama_lengkap: cleanName,
+            nomor_hp: cleanPhone,
+          },
+        },
+      });
+
+    console.log("SIGN UP DATA:", data);
+    console.log("SIGN UP ERROR:", authError);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    if (!data.user) {
+      setError("Gagal membuat akun.");
+      return;
+    }
+
+    console.log("REGISTER AUTH BERHASIL");
+    console.log("USER ID:", data.user.id);
+
+    console.log("Menunggu trigger membuat profile dan peserta...");
+
+    await supabase.auth.signOut();
+
+    setShowOtpModal(true);
+
+  } catch (err) {
+    console.error("REGISTER ERROR:", err);
+
+    if (err instanceof Error) {
+      console.error("MESSAGE:", err.message);
+    }
+
+    setError("Terjadi kesalahan saat membuat akun.");
+  } finally {
+    setSubmitting(false);
+  }
+}
+
   function handleVerifyOtp(code: string) {
-    // TODO: kirim `code` ke API verifikasi OTP kamu di sini.
     console.log("Kode OTP dimasukkan:", code);
     setShowOtpModal(false);
     router.push("/pendaftar/beranda");
@@ -107,6 +175,8 @@ export default function RegisterForm() {
                 name="fullName"
                 placeholder="Nama Lengkap"
                 required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-colors focus:border-brand-blue focus:bg-white"
               />
             </div>
@@ -118,6 +188,8 @@ export default function RegisterForm() {
                 name="email"
                 placeholder="Email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-colors focus:border-brand-blue focus:bg-white"
               />
             </div>
@@ -180,11 +252,10 @@ export default function RegisterForm() {
                     setConfirmPassword(e.target.value);
                     setPasswordError("");
                   }}
-                  className={`w-full rounded-xl border bg-slate-50 py-3.5 pl-11 pr-11 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-colors focus:bg-white ${
-                    passwordError
-                      ? "border-red-300 focus:border-red-400"
-                      : "border-slate-200 focus:border-brand-blue"
-                  }`}
+                  className={`w-full rounded-xl border bg-slate-50 py-3.5 pl-11 pr-11 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-colors focus:bg-white ${passwordError
+                    ? "border-red-300 focus:border-red-400"
+                    : "border-slate-200 focus:border-brand-blue"
+                    }`}
                 />
                 <button
                   type="button"
@@ -212,10 +283,15 @@ export default function RegisterForm() {
 
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-transform hover:-translate-y-0.5 hover:bg-blue-700"
+              disabled={submitting}
+              className={`flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-transform ${submitting
+                  ? "cursor-not-allowed opacity-70"
+                  : "hover:-translate-y-0.5 hover:bg-blue-700"
+                }`}
             >
-              Daftar Sekarang
-              <ArrowRight className="h-4 w-4" />
+              {submitting ? "Mendaftarkan..." : "Daftar Sekarang"}
+
+              {!submitting && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
 
