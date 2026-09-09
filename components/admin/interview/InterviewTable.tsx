@@ -1,199 +1,125 @@
 "use client";
 
-import { Eye } from "lucide-react";
-import { Interview } from "@/app/admin/wawancara/page";
+// Samakan dengan data dari page wawancara admin
+export type Interview = {
+  peserta_id: string;
+  jadwal_id: string | null;
 
-interface Props {
-  data: Interview[];
-  onDetail: (interview: Interview) => void;
-}
+  nama: string;
+  email: string;
+  sekolah: string;
+  posisi: string;
+
+  interviewer: string;
+  tanggal: string; // "YYYY-MM-DD" atau ""
+  jam: string;     // "HH:MM" atau ""
+  metode: string;
+  lokasi: string;
+
+  status: string; // ✅ Menunggu | Dijadwalkan | Selesai | Lulus | Tidak Lulus | dll
+};
 
 export default function InterviewTable({
   data,
   onDetail,
-}: Props) {
+}: {
+  data: Interview[];
+  onDetail: (interview: Interview) => void;
+}) {
+  const formatTanggal = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const badgeClass = (status: string) => {
+    if (status === "Dijadwalkan") return "bg-blue-100 text-blue-700";
+    if (status === "Menunggu") return "bg-gray-100 text-gray-700";
+    if (status === "Belum Dijadwalkan") return "bg-gray-100 text-gray-700";
+    if (status === "Selesai") return "bg-green-100 text-green-700";
+    if (status === "Lulus") return "bg-emerald-100 text-emerald-700";
+    if (status === "Tidak Lulus") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-
+    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div className="overflow-x-auto">
-
         <table className="w-full">
-
-          <thead className="bg-gray-50">
-
-            <tr className="text-left text-sm text-gray-500">
-
-              <th className="px-6 py-4">Peserta</th>
-              <th className="px-6 py-4">Sekolah</th>
-              <th className="px-6 py-4">Posisi</th>
-              <th className="px-6 py-4">Jadwal</th>
-              <th className="px-6 py-4">Interviewer</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-center">Aksi</th>
-
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">
+                Peserta
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">
+                Posisi
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">
+                Interviewer
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">
+                Tanggal
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">
+                Jam
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">
+                Status
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">
+                Aksi
+              </th>
             </tr>
-
           </thead>
 
-          <tbody>
-
+          <tbody className="divide-y divide-gray-100">
             {data.map((item) => (
-
-              <tr
-                key={item.id}
-                className="border-t transition hover:bg-gray-50"
-              >
-
-                <td className="px-6 py-5">
-
-                <div className="flex items-center gap-4">
-
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 font-semibold text-blue-600">
-                    {item.nama
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </div>
-
-                    <div>
-
-                    <p className="font-semibold text-gray-900">
-                        {item.nama}
-                    </p>
-
-                    <p className="text-sm text-gray-500">
-                        {item.email}
-                    </p>
-
-                    <p className="text-xs text-gray-400">
-                        {item.sekolah}
-                    </p>
-
-                    </div>
-
-                </div>
+              <tr key={item.peserta_id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="font-medium text-gray-900">{item.nama}</div>
+                  <div className="text-xs text-gray-500 break-all">{item.email}</div>
                 </td>
 
-                <td className="px-6 py-5">
-                  {item.sekolah}
+                <td className="px-4 py-3 text-sm text-gray-700">{item.posisi || "-"}</td>
+                <td className="px-4 py-3 text-sm text-gray-700">{item.interviewer || "-"}</td>
+                <td className="px-4 py-3 text-sm text-gray-700">{formatTanggal(item.tanggal)}</td>
+                <td className="px-4 py-3 text-sm text-gray-700">{item.jam || "-"}</td>
+
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass(
+                      item.status
+                    )}`}
+                  >
+                    {item.status}
+                  </span>
                 </td>
 
-                <td className="px-6 py-5">
-                  {item.posisi}
-                </td>
-
-                <td className="px-6 py-5">
-
-                <div>
-
-                    <p className="font-medium">
-                    {item.tanggal}
-                    </p>
-
-                    <p className="text-sm text-blue-600">
-                    {item.jam}
-                    </p>
-
-                </div>
-                </td>
-
-                <td className="px-6 py-5">
-                  {item.interviewer}
-                </td>
-
-                <td className="px-6 py-5">
-                  <InterviewStatusBadge
-                    status={item.status}
-                  />
-                </td>
-
-                <td className="px-6 py-5 text-center">
-
+                <td className="px-4 py-3">
                   <button
                     onClick={() => onDetail(item)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-600 hover:text-white"
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-700"
                   >
-
-                    <Eye size={16} />
-
                     Detail
-
                   </button>
-
                 </td>
-
               </tr>
-
             ))}
 
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
+                  Tidak ada data wawancara.
+                </td>
+              </tr>
+            )}
           </tbody>
-
         </table>
-
       </div>
-
-      <div className="flex items-center justify-between border-t px-6 py-4">
-
-        <p className="text-sm text-gray-500">
-          Menampilkan {data.length} jadwal wawancara
-        </p>
-
-        <div className="flex gap-2">
-
-          <button className="rounded-lg border px-3 py-1 hover:bg-gray-100">
-            ←
-          </button>
-
-          <button className="rounded-lg bg-blue-600 px-3 py-1 text-white">
-            1
-          </button>
-
-          <button className="rounded-lg border px-3 py-1 hover:bg-gray-100">
-            →
-          </button>
-
-        </div>
-
-      </div>
-
     </div>
-  );
-}
-
-function InterviewStatusBadge({
-  status,
-}: {
-  status: string;
-}) {
-
-  let color = "bg-gray-100 text-gray-700";
-
-  if (status === "Menunggu") {
-    color = "bg-yellow-100 text-yellow-700";
-  }
-
-  if (status === "Dijadwalkan") {
-    color = "bg-blue-100 text-blue-700";
-  }
-
-  if (status === "Selesai") {
-    color = "bg-green-100 text-green-700";
-  }
-
-  if (status === "Lulus") {
-    color = "bg-emerald-100 text-emerald-700";
-  }
-
-  if (status === "Tidak Lulus") {
-    color = "bg-red-100 text-red-700";
-  }
-
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs font-semibold ${color}`}
-    >
-      {status}
-    </span>
   );
 }
