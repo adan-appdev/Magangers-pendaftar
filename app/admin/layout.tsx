@@ -31,7 +31,7 @@ export default function AdminLayout({
           return;
         }
 
-        // 2. Ambil profile berdasarkan ID Auth
+
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("id, nama_lengkap, email, role")
@@ -48,7 +48,7 @@ export default function AdminLayout({
 
         console.log("ADMIN PROFILE:", profile);
 
-        // 3. Pastikan role adalah admin
+  
         if (profile.role !== "admin") {
           console.warn("Akses ditolak. Role:", profile.role);
 

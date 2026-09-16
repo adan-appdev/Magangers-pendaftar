@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -12,49 +12,54 @@ function mapStatus(appStatus: string) {
   return appStatus;
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return auth.res;
 
   const admin = supabaseAdmin();
 
   const { data, error } = await admin
-    .from("pengajuan_magang")
+    .from("v_admin_pelamar")
     .select(`
-      id,
+      peserta_id,
+      nama_lengkap,
+      email,
+      nomor_hp,
+      sekolah,
+      jurusan,
+      alamat,
+      pengajuan_id,
       posisi,
       catatan,
-      status,
+      pengajuan_status,
       tanggal_pengajuan,
-      peserta:peserta_id (
-        id,
-        user_id,
-        nama_lengkap,
-        email,
-        nomor_hp,
-        alamat,
-        sekolah,
-        jurusan
-      )
+      total_pengajuan
     `)
     .order("tanggal_pengajuan", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Query error", detail: error.message }, { status: 500 });
   }
 
   const items = (data ?? []).map((row: any) => ({
-    id: row.id,
-    nama: row.peserta?.nama_lengkap ?? "-",
-    email: row.peserta?.email ?? "-",
-    sekolah: row.peserta?.sekolah ?? "-",
-    jurusan: row.peserta?.jurusan ?? "-",
+    // ✅ id sekarang = peserta_id (biar 1 peserta 1 row)
+    id: row.peserta_id,
+
+    // ✅ pengajuan terbaru (buat approve/reject/revisi + dokumen)
+    pengajuan_id: row.pengajuan_id,
+
+    total_pengajuan: row.total_pengajuan ?? 1,
+
+    nama: row.nama_lengkap ?? "-",
+    email: row.email ?? "-",
+    sekolah: row.sekolah ?? "-",
+    jurusan: row.jurusan ?? "-",
     posisi: row.posisi ?? "-",
-    alamat: row.peserta?.alamat ?? "-",
-    nohp: row.peserta?.nomor_hp ?? "-",
+    alamat: row.alamat ?? "-",
+    nohp: row.nomor_hp ?? "-",
     tanggal: row.tanggal_pengajuan,
-    status: mapStatus(row.status),
-    raw_status: row.status,
+    status: mapStatus(row.pengajuan_status),
+    raw_status: row.pengajuan_status,
     catatan: row.catatan ?? null,
   }));
 

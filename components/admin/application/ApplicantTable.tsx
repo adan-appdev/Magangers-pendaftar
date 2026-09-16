@@ -1,88 +1,90 @@
 "use client";
 
-import { Eye } from "lucide-react";
-import type { Applicant } from "@/types/applicant";
+import type { AdminApplicant } from "@/types/adminApplicant";
 
-interface Props {
-  data: Applicant[];
-  onDetail: (applicant: Applicant) => void;
-}
+export default function ApplicantTable({
+  data,
+  onDetail,
+}: {
+  data: AdminApplicant[];
+  onDetail: (applicant: AdminApplicant) => void;
+}) {
+  const formatTanggal = (iso?: string) => {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    return d.toLocaleString("id-ID", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-export default function ApplicantTable({ data, onDetail }: Props) {
+  const badgeClass = (status: string) => {
+    if (status === "Menunggu") return "bg-yellow-100 text-yellow-700";
+    if (status === "Diperiksa") return "bg-blue-100 text-blue-700";
+    if (status === "Revisi") return "bg-amber-100 text-amber-800";
+    if (status === "Diterima") return "bg-green-100 text-green-700";
+    if (status === "Ditolak") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr className="text-left text-sm text-gray-500">
-              <th className="px-6 py-4">Pelamar</th>
-              <th className="px-6 py-4">Sekolah</th>
-              <th className="px-6 py-4">Posisi</th>
-              <th className="px-6 py-4">Tanggal</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-center">Aksi</th>
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Pelamar</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Posisi Terbaru</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Tanggal Terbaru</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Total</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Aksi</th>
             </tr>
           </thead>
 
-          <tbody>
-            {data.map((item) => (
-              <tr key={item.id} className="border-t hover:bg-gray-50">
-                <td className="px-6 py-5">
-                  <div>
-                    <p className="font-semibold">{item.nama}</p>
-                    <p className="text-sm text-gray-500">{item.email}</p>
-                  </div>
+          <tbody className="divide-y divide-gray-100">
+            {data.map((a) => (
+              <tr key={a.peserta_id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="font-medium text-gray-900">{a.nama}</div>
+                  <div className="text-xs text-gray-500 break-all">{a.email}</div>
                 </td>
 
-                <td className="px-6 py-5">{item.sekolah}</td>
-                <td className="px-6 py-5">{item.posisi}</td>
-                <td className="px-6 py-5">{item.tanggal}</td>
+                <td className="px-4 py-3 text-sm text-gray-700">{a.posisi}</td>
+                <td className="px-4 py-3 text-sm text-gray-700">{formatTanggal(a.tanggal)}</td>
 
-                <td className="px-6 py-5">
-                  <StatusBadge status={item.status} />
+                <td className="px-4 py-3">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass(a.status)}`}>
+                    {a.status}
+                  </span>
                 </td>
 
-                <td className="px-6 py-5 text-center">
+                <td className="px-4 py-3 text-sm text-gray-700">{a.total_pengajuan}x</td>
+
+                <td className="px-4 py-3">
                   <button
-                    onClick={() => onDetail(item)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                    onClick={() => onDetail(a)}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-700"
                   >
-                    <Eye size={16} />
                     Detail
                   </button>
                 </td>
               </tr>
             ))}
+
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                  Tidak ada data pelamar.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-
-      <div className="flex items-center justify-between border-t px-6 py-4">
-        <p className="text-sm text-gray-500">Menampilkan {data.length} pelamar</p>
-
-        <div className="flex gap-2">
-          <button className="rounded-lg border px-3 py-1 hover:bg-gray-100">←</button>
-          <button className="rounded-lg bg-blue-600 px-3 py-1 text-white">1</button>
-          <button className="rounded-lg border px-3 py-1 hover:bg-gray-100">2</button>
-          <button className="rounded-lg border px-3 py-1 hover:bg-gray-100">→</button>
-        </div>
-      </div>
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  let color = "bg-gray-100 text-gray-700";
-
-  if (status === "Menunggu") color = "bg-yellow-100 text-yellow-700";
-  if (status === "Diperiksa") color = "bg-blue-100 text-blue-700";
-  if (status === "Revisi") color = "bg-orange-100 text-orange-700";
-  if (status === "Diterima") color = "bg-green-100 text-green-700";
-  if (status === "Ditolak") color = "bg-red-100 text-red-700";
-
-  return (
-    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${color}`}>
-      {status}
-    </span>
   );
 }

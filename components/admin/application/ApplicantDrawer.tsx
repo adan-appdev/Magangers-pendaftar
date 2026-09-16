@@ -1,7 +1,9 @@
 "use client";
 
-import type { Applicant } from "@/types/applicant";
-import { X, FileText } from "lucide-react";
+import { Applicant } from "@/data/applicants";
+import type { AdminApplicant } from "@/types/adminApplicant";
+import { X, FileText, History } from "lucide-react";
+  
 
 type AdminDoc = {
   jenis: string;
@@ -10,6 +12,16 @@ type AdminDoc = {
   mime_type: string | null;
   size: number | null;
   uploaded_at: string;
+};
+
+type HistoryItem = {
+  id: string;
+  tanggal: string;
+  posisi: string;
+  status: string;
+  raw_status: string;
+  catatan: string | null;
+  diproses_at: string | null;
 };
 
 function jenisLabel(jenis: string) {
@@ -35,6 +47,18 @@ function formatBytes(bytes?: number | null) {
   return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+function formatTanggal(iso?: string | null) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleString("id-ID", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function ApplicantDrawer({
   open,
   onClose,
@@ -45,6 +69,9 @@ export default function ApplicantDrawer({
   docs,
   docsLoading,
   docsError,
+  history,
+  historyLoading,
+  historyError,
 }: {
   open: boolean;
   onClose: () => void;
@@ -52,9 +79,14 @@ export default function ApplicantDrawer({
   onAccept: () => void;
   onReject: () => void;
   onRevision: () => void;
+
   docs: AdminDoc[];
   docsLoading: boolean;
   docsError: string | null;
+
+  history: HistoryItem[];
+  historyLoading: boolean;
+  historyError: string | null;
 }) {
   if (!open) return null;
 
@@ -65,7 +97,7 @@ export default function ApplicantDrawer({
         <div className="flex items-center justify-between border-b px-5 py-4">
           <div>
             <h2 className="text-lg font-bold">Detail Pelamar</h2>
-            <p className="text-sm text-gray-500">Periksa data & dokumen</p>
+            <p className="text-sm text-gray-500">Periksa data, dokumen, dan riwayat pengajuan</p>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-gray-100">
             <X size={18} />
@@ -100,21 +132,72 @@ export default function ApplicantDrawer({
                 <div className="font-medium">{applicant?.alamat ?? "-"}</div>
               </div>
               <div>
-                <div className="text-gray-500">Posisi</div>
+                <div className="text-gray-500">Posisi (Terbaru)</div>
                 <div className="font-medium">{applicant?.posisi ?? "-"}</div>
               </div>
               <div>
-                <div className="text-gray-500">Status</div>
+                <div className="text-gray-500">Status (Terbaru)</div>
                 <div className="font-medium">{applicant?.status ?? "-"}</div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-gray-500">Total Pengajuan</div>
+                <div className="font-medium">{applicant?.total_pengajuan ?? 1}x</div>
               </div>
             </div>
 
             {applicant?.catatan ? (
               <div className="mt-3 text-sm">
-                <div className="text-gray-500">Catatan pelamar</div>
+                <div className="text-gray-500">Catatan (Terbaru)</div>
                 <div className="mt-1 rounded-xl bg-gray-50 p-3">{applicant.catatan}</div>
               </div>
             ) : null}
+          </div>
+
+          {/* HISTORY */}
+          <div className="rounded-2xl border p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold inline-flex items-center gap-2">
+                <History size={16} />
+                Riwayat Pengajuan
+              </h3>
+              {historyLoading ? <span className="text-xs text-gray-500">Loading...</span> : null}
+            </div>
+
+            {historyError ? (
+              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {historyError}
+              </div>
+            ) : null}
+
+            {!historyLoading && !historyError && (
+              <div className="mt-3 space-y-2">
+                {history.length === 0 ? (
+                  <div className="text-sm text-gray-500">Belum ada riwayat pengajuan.</div>
+                ) : (
+                  history.map((h) => (
+                    <div key={h.id} className="rounded-xl bg-gray-50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold truncate">{h.posisi}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {formatTanggal(h.tanggal)} • {h.status}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 shrink-0">
+                          {h.raw_status}
+                        </div>
+                      </div>
+
+                      {h.catatan ? (
+                        <div className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                          <span className="font-medium text-gray-600">Catatan:</span> {h.catatan}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* DOKUMEN */}

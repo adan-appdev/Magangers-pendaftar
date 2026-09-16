@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/apiAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { ensurePesertaByUserId } from "@/lib/ensurePeserta";
 
 export async function POST(req: Request) {
   const auth = await requireUser(req);
@@ -9,31 +10,9 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const admin = supabaseAdmin();
 
-  // pastikan peserta row sudah ada (sesuai pola yang kamu pakai di submit pengajuan)
-  const { data: peserta, error: pErr } = await admin
-    .from("peserta")
-    .select("id")
-    .eq("user_id", auth.user.id)
-    .maybeSingle();
 
-  if (pErr) {
-    return NextResponse.json(
-      { message: "Query peserta error", detail: pErr.message },
-      { status: 500 }
-    );
-  }
+  const peserta = await ensurePesertaByUserId(auth.user.id);
 
-  if (!peserta) {
-    return NextResponse.json(
-      {
-        message: "Peserta belum ada",
-        detail: "Buat row peserta dulu untuk user ini",
-      },
-      { status: 400 }
-    );
-  }
-
-  // mapping dari form (camelCase) -> kolom DB (snake_case)
   const payload = {
     nama_lengkap: body?.nama ?? null,
     email: body?.email ?? null,
@@ -41,7 +20,7 @@ export async function POST(req: Request) {
 
     nik: body?.nik ?? null,
     tempat_lahir: body?.tempat ?? null,
-    tanggal_lahir: body?.tanggal ? body.tanggal : null, // "YYYY-MM-DD" cocok untuk date
+    tanggal_lahir: body?.tanggal ? body.tanggal : null,
     jenis_kelamin: body?.gender ?? null,
 
     alamat: body?.alamat ?? null,
